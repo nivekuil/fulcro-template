@@ -1,12 +1,10 @@
-(ns app.model.session
+(ns app.model.session-resolvers
   (:require
-    [app.model.mock-database :as db]
+    [com.fulcrologic.fulcro.server.api-middleware :as fmw]
+    [com.wsscode.pathom.connect :as pc :refer [defresolver defmutation]]
     [datascript.core :as d]
     [ghostwheel.core :refer [>defn => | ?]]
-    [com.wsscode.pathom.connect :as pc :refer [defresolver defmutation]]
-    [taoensso.timbre :as log]
-    [clojure.spec.alpha :as s]
-    [com.fulcrologic.fulcro.server.api-middleware :as fmw]))
+    [taoensso.timbre :as log]))
 
 (defonce account-database (atom {}))
 
@@ -30,7 +28,8 @@
           (assoc resp :session new-session))))))
 
 (defmutation login [env {:keys [username password]}]
-  {::pc/output [:session/valid? :account/name]}
+  {::pc/output [:session/valid? :account/name]
+   ::pc/sym    'app.model.session/login}
   (log/info "Authenticating" username)
   (let [{expected-email    :email
          expected-password :password} (get @account-database username)]
@@ -43,11 +42,13 @@
         (throw (ex-info "Invalid credentials" {:username username}))))))
 
 (defmutation logout [env params]
-  {::pc/output [:session/valid?]}
+  {::pc/output [:session/valid?]
+   ::pc/sym    'app.model.session/logout}
   (response-updating-session env {:session/valid? false :account/name ""}))
 
 (defmutation signup! [env {:keys [email password]}]
-  {::pc/output [:signup/result]}
+  {::pc/output [:signup/result]
+   ::pc/sym    'app.model.session/signup!}
   (swap! account-database assoc email {:email    email
                                        :password password})
   {:signup/result "OK"})

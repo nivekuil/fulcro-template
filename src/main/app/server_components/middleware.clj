@@ -45,7 +45,9 @@
       [:link {:rel "shortcut icon" :href "data:image/x-icon;," :type "image/x-icon"}]
       [:script (str "var fulcro_network_csrf_token = '" csrf-token "';")]]
      [:body
-      [:div#app]
+      [:div#app
+       [:div.ui.large.text.loader.active
+        "Loading, Please Wait."]]
       [:script {:src "js/main/main.js"}]]]))
 
 ;; ================================================================================
@@ -70,24 +72,25 @@
       [:script {:src "workspaces/js/main.js"}]]]))
 
 (defn wrap-html-routes [ring-handler]
-  (fn [{:keys [uri anti-forgery-token] :as req}]
-    (cond
-      (#{"/" "/index.html"} uri)
-      (-> (resp/response (index anti-forgery-token))
-        (resp/content-type "text/html"))
+  (fn [{:keys [uri anti-forgery-token session] :as req}]
+    (log/spy :info session)
+    (let [legal-app-routes #{"/main" "/settings" "/"}]
+      (cond
+        (contains? legal-app-routes uri)
+        (-> (resp/response (index anti-forgery-token))
+          (resp/content-type "text/html"))
 
-      ;; See note above on the `wslive` function.
-      (#{"/wslive.html"} uri)
-      (-> (resp/response (wslive anti-forgery-token))
-        (resp/content-type "text/html"))
+        ;; See note above on the `wslive` function.
+        (#{"/wslive.html"} uri)
+        (-> (resp/response (wslive anti-forgery-token))
+          (resp/content-type "text/html"))
 
-      :else
-      (ring-handler req))))
+        :else
+        (ring-handler req)))))
 
 (defstate middleware
   :start
-  (let [defaults-config (:ring.middleware/defaults-config config)
-        legal-origins   (get config :legal-origins #{"localhost"})]
+  (let [defaults-config (:ring.middleware/defaults-config config)]
     (-> not-found-handler
       (wrap-api "/api")
       wrap-transit-params

@@ -1,16 +1,14 @@
 (ns app.ui.root
   (:require
     [app.model.session :as session]
-    [clojure.string :as str]
-    [com.fulcrologic.fulcro.dom :as dom :refer [div ul li p h3 button]]
+    #?(:clj  [com.fulcrologic.fulcro.dom-server :as dom :refer [div ul li p h3 button a input span]]
+       :cljs [com.fulcrologic.fulcro.dom :as dom :refer [div ul li p h3 button a input span]])
     [com.fulcrologic.fulcro.dom.html-entities :as ent]
     [com.fulcrologic.fulcro.dom.events :as evt]
-    [com.fulcrologic.fulcro.application :as app]
     [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
     [com.fulcrologic.fulcro.routing.dynamic-routing :as dr]
     [com.fulcrologic.fulcro.ui-state-machines :as uism :refer [defstatemachine]]
     [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
-    [com.fulcrologic.fulcro.algorithms.merge :as merge]
     [com.fulcrologic.fulcro-css.css :as css]
     [com.fulcrologic.fulcro.algorithms.form-state :as fs]
     [taoensso.timbre :as log]))
@@ -18,19 +16,19 @@
 (defn field [{:keys [label valid? error-message] :as props}]
   (let [input-props (-> props (assoc :name label) (dissoc :label :valid? :error-message))]
     (div :.ui.field
-      (dom/label {:htmlFor label} label)
-      (dom/input input-props)
-      (dom/div :.ui.error.message {:classes [(when valid? "hidden")]}
+      (label {:htmlFor label} label)
+      (input input-props)
+      (div :.ui.error.message {:classes [(when valid? "hidden")]}
         error-message))))
 
-(defsc SignupSuccess [this props]
+(defsc SignupSuccess [_ _]
   {:query         ['*]
    :initial-state {}
    :ident         (fn [] [:component/id :signup-success])
    :route-segment ["signup-success"]}
   (div
-    (dom/h3 "Signup Complete!")
-    (dom/p "You can now log in!")))
+    (h3 "Signup Complete!")
+    (p "You can now log in!")))
 
 (defsc Signup [this {:account/keys [email password password-again] :as props}]
   {:query             [:account/email :account/password :account/password-again fs/form-config-join]
@@ -50,7 +48,7 @@
                      (log/info "Sign up")))
         checked? (fs/checked? props)]
     (div
-      (dom/h3 "Signup")
+      (h3 "Signup")
       (div :.ui.form {:classes [(when checked? "error")]}
         (field {:label         "Email"
                 :value         (or email "")
@@ -72,7 +70,7 @@
                 :valid?        (= password password-again)
                 :error-message "Passwords do not match."
                 :onChange      #(m/set-string! this :account/password-again :event %)})
-        (dom/button :.ui.primary.button {:onClick #(submit! true)}
+        (button :.ui.primary.button {:onClick #(submit! true)}
           "Sign Up")))))
 
 (declare Session)
@@ -96,22 +94,22 @@
         logged-in?    (= :state/logged-in current-state)
         {:keys [floating-menu]} (css/get-classnames Login)
         password      (or (comp/get-state this :password) "")] ; c.l. state for security
-    (dom/div
+    (div
       (when-not initial?
-        (dom/div :.right.menu
+        (div :.right.menu
           (if logged-in?
-            (dom/button :.item
+            (button :.item
               {:onClick #(uism/trigger! this ::session/session :event/logout)}
-              (dom/span current-user) ent/nbsp "Log out")
-            (dom/div :.item {:style   {:position "relative"}
-                             :onClick #(uism/trigger! this ::session/session :event/toggle-modal)}
+              (span current-user) ent/nbsp "Log out")
+            (div :.item {:style   {:position "relative"}
+                         :onClick #(uism/trigger! this ::session/session :event/toggle-modal)}
               "Login"
               (when open?
-                (dom/div :.four.wide.ui.raised.teal.segment {:onClick (fn [e]
-                                                                        ;; Stop bubbling (would trigger the menu toggle)
-                                                                        (evt/stop-propagation! e))
-                                                             :classes [floating-menu]}
-                  (dom/h3 :.ui.header "Login")
+                (div :.four.wide.ui.raised.teal.segment {:onClick (fn [e]
+                                                                    ;; Stop bubbling (would trigger the menu toggle)
+                                                                    (evt/stop-propagation! e))
+                                                         :classes [floating-menu]}
+                  (h3 :.ui.header "Login")
                   (div :.ui.form {:classes [(when (seq error) "error")]}
                     (field {:label    "Email"
                             :value    email
@@ -122,15 +120,15 @@
                             :onChange #(comp/set-state! this {:password (evt/target-value %)})})
                     (div :.ui.error.message error)
                     (div :.ui.field
-                      (dom/button :.ui.button
+                      (button :.ui.button
                         {:onClick (fn [] (uism/trigger! this ::session/session :event/login {:username email
                                                                                              :password password}))
                          :classes [(when loading? "loading")]} "Login"))
                     (div :.ui.message
-                      (dom/p "Don't have an account?")
-                      (dom/a {:onClick (fn []
-                                         (uism/trigger! this ::session/session :event/toggle-modal {})
-                                         (dr/change-route this ["signup"]))}
+                      (p "Don't have an account?")
+                      (a {:onClick (fn []
+                                     (uism/trigger! this ::session/session :event/toggle-modal {})
+                                     (dr/change-route this ["signup"]))}
                         "Please sign up!"))))))))))))
 
 (def ui-login (comp/factory Login))
@@ -180,10 +178,10 @@
   (let [current-tab (some-> (dr/current-route this this) first keyword)]
     (div :.ui.container
       (div :.ui.secondary.pointing.menu
-        (dom/a :.item {:classes [(when (= :main current-tab) "active")]
-                       :onClick (fn [] (dr/change-route this ["main"]))} "Main")
-        (dom/a :.item {:classes [(when (= :settings current-tab) "active")]
-                       :onClick (fn [] (dr/change-route this ["settings"]))} "Settings")
+        (a :.item {:classes [(when (= :main current-tab) "active")]
+                   :onClick (fn [] (dr/change-route this ["main"]))} "Main")
+        (a :.item {:classes [(when (= :settings current-tab) "active")]
+                   :onClick (fn [] (dr/change-route this ["settings"]))} "Settings")
         (div :.right.menu
           (ui-login login)))
       (div :.ui.grid

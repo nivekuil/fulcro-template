@@ -1,15 +1,15 @@
 (ns app.server-components.pathom
   (:require
-    [mount.core :refer [defstate]]
-    [taoensso.timbre :as log]
+    [app.model.account-resolvers :as acct]
+    [app.model.mock-database :as db]
+    [app.model.session-resolvers :as session]
+    [app.server-components.config :refer [config]]
+    [clojure.core.async :as async]
+    [com.wsscode.common.async-clj :refer [let-chan]]
     [com.wsscode.pathom.connect :as pc]
     [com.wsscode.pathom.core :as p]
-    [com.wsscode.common.async-clj :refer [let-chan]]
-    [clojure.core.async :as async]
-    [app.model.account :as acct]
-    [app.model.session :as session]
-    [app.server-components.config :refer [config]]
-    [app.model.mock-database :as db]))
+    [mount.core :refer [defstate]]
+    [taoensso.timbre :as log]))
 
 (pc/defresolver index-explorer [env _]
   {::pc/input  #{:com.wsscode.pathom.viz.index-explorer/id}

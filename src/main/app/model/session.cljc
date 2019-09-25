@@ -1,4 +1,5 @@
 (ns app.model.session
+  "Client side implementation of sessions. CLJC to support SSR"
   (:require
     [app.application :refer [SPA]]
     [com.fulcrologic.fulcro.routing.dynamic-routing :as dr]
