@@ -16,7 +16,7 @@
 (defn field [{:keys [label valid? error-message] :as props}]
   (let [input-props (-> props (assoc :name label) (dissoc :label :valid? :error-message))]
     (div :.ui.field
-      (label {:htmlFor label} label)
+      (dom/label {:htmlFor label} label)
       (input input-props)
       (div :.ui.error.message {:classes [(when valid? "hidden")]}
         error-message))))
@@ -175,7 +175,7 @@
    :initial-state {:root/router          {}
                    :root/login           {}
                    :root/current-session {}}}
-  (let [current-tab (some-> (dr/current-route this this) first keyword)]
+  (let [current-tab (some-> (dr/current-route this TopChrome) first keyword)]
     (div :.ui.container
       (div :.ui.secondary.pointing.menu
         (a :.item {:classes [(when (= :main current-tab) "active")]
