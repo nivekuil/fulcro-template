@@ -154,7 +154,6 @@
    :ident         (fn [] [:component/id :settings])
    :route-segment ["settings"]
    :initial-state {}}
-  (js/console.log progress)
   (let [network? (df/loading? (get-in props [df/marker-table :app.model.settings/save]))]
     (div :.ui.container.segment
       (h3 "Settings")
