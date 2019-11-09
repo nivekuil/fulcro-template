@@ -1,6 +1,7 @@
 (ns app.ui.root
   (:require
     [app.model.session :as session]
+    [app.model.settings :as settings]
     [clojure.string :as str]
     [com.fulcrologic.fulcro.dom :as dom :refer [div ul li p h3 button]]
     [com.fulcrologic.fulcro.dom.html-entities :as ent]
@@ -11,6 +12,7 @@
     [com.fulcrologic.fulcro.ui-state-machines :as uism :refer [defstatemachine]]
     [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
     [com.fulcrologic.fulcro.algorithms.merge :as merge]
+    [com.fulcrologic.fulcro.networking.file-upload :as file-upload]
     [com.fulcrologic.fulcro-css.css :as css]
     [com.fulcrologic.fulcro.algorithms.form-state :as fs]
     [taoensso.timbre :as log]))
@@ -143,13 +145,31 @@
   (div :.ui.container.segment
     (h3 "Main")))
 
+
 (defsc Settings [this {:keys [:account/time-zone :account/real-name] :as props}]
   {:query         [:account/time-zone :account/real-name]
    :ident         (fn [] [:component/id :settings])
    :route-segment ["settings"]
    :initial-state {}}
   (div :.ui.container.segment
-    (h3 "Settings")))
+    (h3 "Settings")
+    (dom/div :.ui.form
+      (dom/div :.field
+        (dom/label "Real Name")
+        (dom/input {:value    (or real-name "")
+                    :onChange (fn [evt] (m/set-string! this :account/real-name :event evt))}))
+      (dom/div :.field
+        (dom/label "Avatar Image (JPG or PNG)")
+        (dom/input {:type     "file"
+                    :accept   "image/jpeg,image/png"
+                    :onChange (fn [evt]
+                                (let [files (file-upload/evt->uploads evt)]
+                                  (comp/set-state! this {:files files})))}))
+      (dom/button {:onClick
+                   (fn []
+                     (let [uploads (comp/get-state this :files)]
+                       (comp/transact! this [(settings/save-settings (file-upload/attach-uploads props uploads))])))}
+        "Save"))))
 
 (dr/defrouter TopRouter [this props]
   {:router-targets [Main Signup SignupSuccess Settings]})

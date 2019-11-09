@@ -8,7 +8,7 @@
     [app.server-components.http-server :refer [http-server]]))
 
 ;; ==================== SERVER ====================
-(set-refresh-dirs "src/main" "src/dev" "src/test")
+(set-refresh-dirs "src/main" "src/dev" "src/test" "/Users/tonykay/fulcrologic/fulcro/src/main")
 ;; Change the default output of spec to be more readable
 (alter-var-root #'s/*explain-out* (constantly expound/printer))
 
