@@ -15,7 +15,8 @@
     [com.fulcrologic.fulcro.networking.file-upload :as file-upload]
     [com.fulcrologic.fulcro-css.css :as css]
     [com.fulcrologic.fulcro.algorithms.form-state :as fs]
-    [taoensso.timbre :as log]))
+    [taoensso.timbre :as log]
+    [com.fulcrologic.fulcro.data-fetch :as df]))
 
 (defn field [{:keys [label valid? error-message] :as props}]
   (let [input-props (-> props (assoc :name label) (dissoc :label :valid? :error-message))]
@@ -146,30 +147,50 @@
     (h3 "Main")))
 
 
-(defsc Settings [this {:keys [:account/time-zone :account/real-name] :as props}]
-  {:query         [:account/time-zone :account/real-name]
+(defsc Settings [this {:ui/keys      [progress]
+                       :account/keys [time-zone real-name] :as props}]
+  {:query         [:ui/progress :account/time-zone :account/real-name
+                   [df/marker-table '_]]
    :ident         (fn [] [:component/id :settings])
    :route-segment ["settings"]
    :initial-state {}}
-  (div :.ui.container.segment
-    (h3 "Settings")
-    (dom/div :.ui.form
-      (dom/div :.field
-        (dom/label "Real Name")
-        (dom/input {:value    (or real-name "")
-                    :onChange (fn [evt] (m/set-string! this :account/real-name :event evt))}))
-      (dom/div :.field
-        (dom/label "Avatar Image (JPG or PNG)")
-        (dom/input {:type     "file"
-                    :accept   "image/jpeg,image/png"
-                    :onChange (fn [evt]
-                                (let [files (file-upload/evt->uploads evt)]
-                                  (comp/set-state! this {:files files})))}))
-      (dom/button {:onClick
-                   (fn []
-                     (let [uploads (comp/get-state this :files)]
-                       (comp/transact! this [(settings/save-settings (file-upload/attach-uploads props uploads))])))}
-        "Save"))))
+  (js/console.log progress)
+  (let [network? (df/loading? (get-in props [df/marker-table :app.model.settings/save]))]
+    (div :.ui.container.segment
+      (h3 "Settings")
+      (dom/div :.ui.form
+        (dom/div :.field
+          (dom/label "Real Name")
+          (dom/input {:value    (or real-name "")
+                      :onChange (fn [evt] (m/set-string! this :account/real-name :event evt))}))
+        (dom/div :.field
+          (dom/label "Avatar Image (JPG or PNG)")
+          (dom/input {:type     "file"
+                      :accept   "image/jpeg,image/png"
+                      :onChange (fn [evt]
+                                  (let [files (file-upload/evt->uploads evt)]
+                                    (comp/set-state! this {:avatar files})))}))
+        (dom/div :.field
+          (dom/label "Manifesto")
+          (dom/input {:type     "file"
+                      :accept   "application/pdf"
+                      :onChange (fn [evt]
+                                  (let [files (file-upload/evt->uploads evt)]
+                                    (comp/set-state! this {:manifesto files})))}))
+        (dom/button {:onClick
+                     (fn []
+                       (let [avatar (comp/get-state this :avatar)
+                             mf     (comp/get-state this :manifesto)]
+                         (comp/transact! this [(settings/save-settings (file-upload/attach-uploads props avatar))
+                                               (settings/publish-manifesto (file-upload/attach-uploads {} mf))]
+                           {:abort-id 1})))}
+          "Save")
+        (when network?
+          (dom/button {:onClick (fn [] (app/abort! this 1))} "CANCEL")))
+      (when network?
+        (div :.ui.bottom.attached.progress
+          (div :.bar {:style {:transitionDuration "300ms"
+                              :width              (str progress "%")}}))))))
 
 (dr/defrouter TopRouter [this props]
   {:router-targets [Main Signup SignupSuccess Settings]})

@@ -11,4 +11,9 @@
   (log/info "New name:" real-name)
   (log/info "New avatar:" (first files)))
 
-(def resolvers [save-settings])
+(defmutation publish-manifesto [env {::file-upload/keys [files]}]
+  {}
+  (log/info "Change the world!!!")
+  (log/info "Manifesto:" (first files)))
+
+(def resolvers [save-settings publish-manifesto])
