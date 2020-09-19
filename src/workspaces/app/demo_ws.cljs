@@ -3,18 +3,28 @@
             [nubank.workspaces.core :as ws]
             [nubank.workspaces.card-types.fulcro3 :as ct.fulcro]
             [com.fulcrologic.fulcro.mutations :as fm]
-            [com.fulcrologic.fulcro.dom :as dom]))
+            [com.fulcrologic.fulcro.dom :as dom]
+            [com.fulcrologic.fulcro.dom.events :as evt]))
+
+(fp/defsc Form
+  [this {:keys [input]}]
+  {:ident         [:form/by-id :form/id]
+   :query         [:input :form/id]
+   :initial-state {:input "foo"}}
+  (dom/form
+   {:onSubmit (fn [e] (evt/prevent-default! e))}
+   (dom/input {:value    input
+               :onChange #(fm/set-value!! this :input (-> % .-target .-value))})))
+(def ui-form (fp/factory Form))
 
 (fp/defsc FulcroDemo
-  [this {:keys [counter]}]
-  {:initial-state (fn [_] {:counter 0})
+  [this {:keys [form]}]
+  {:initial-state (fn [_] {:form (fp/get-initial-state Form)})
    :ident         (fn [] [::id "singleton"])
-   :query         [:counter]}
-  (dom/div
-    (str "Fulcro counter demo [" counter "]")
-    (dom/button {:onClick #(fm/set-value! this :counter (inc counter))} "+")))
+   :query         [:form]}
+  (ui-form (assoc form :form/id :my-form)))
 
 (ws/defcard fulcro-demo-card
   (ct.fulcro/fulcro-card
-    {::ct.fulcro/root       FulcroDemo
-     ::ct.fulcro/wrap-root? true}))
+   {::ct.fulcro/root       FulcroDemo
+    ::ct.fulcro/wrap-root? true}))
