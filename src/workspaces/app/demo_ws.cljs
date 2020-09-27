@@ -10,7 +10,7 @@
   [this {:keys [input]}]
   {:ident         [:form/by-id :form/id]
    :query         [:input :form/id]
-   :initial-state {:input "foo"}}
+   :initial-state {:input "foueoo" :form/id :bar}}
   (dom/form
    {:onSubmit (fn [e] (evt/prevent-default! e))}
    (dom/input {:value    input
